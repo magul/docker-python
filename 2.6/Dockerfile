@@ -36,6 +36,11 @@ RUN set -ex \
 	&& tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
 	&& rm python.tar.xz \
 	\
+	&& cd /lib \
+	&& ln -s $(dpkg-architecture -qDEB_HOST_MULTIARCH)/libz.so.1 libz.so \
+	&& cd /usr/lib \
+	&& ln -s $(dpkg-architecture -qDEB_HOST_MULTIARCH)/libssl.so libssl.so \
+	\
 	&& cd /usr/src/python \
 	&& ./configure \
 		--enable-shared \
@@ -44,8 +49,18 @@ RUN set -ex \
 	&& make install \
 	&& ldconfig \
 	\
+	&& cd /tmp \
+	&& git clone git://github.com/pypa/setuptools.git \
+	&& cd setuptools \
+	&& git checkout 0.9.6 \
+	&& python setup.py install \
+	&& cd .. \
+	&& git clone git://github.com/shazow/urllib3.git \
+	&& cd urllib3 \
+	&& python setup.py install \
+	\
 		&& wget -O /tmp/get-pip.py 'https://bootstrap.pypa.io/get-pip.py' \
-		&& python2 /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
+		&& python /tmp/get-pip.py "pip==$PYTHON_PIP_VERSION" \
 		&& rm /tmp/get-pip.py \
 # we use "--force-reinstall" for the case where the version of pip we're trying to install is the same as the version bundled with Python
 # ("Requirement already up-to-date: pip==8.1.2 in /usr/local/lib/python3.6/site-packages")
@@ -67,4 +82,4 @@ RUN set -ex \
 # install "virtualenv", since the vast majority of users of this image will want it
 RUN pip install --no-cache-dir virtualenv
 
-CMD ["python2"]
+CMD ["python"]
